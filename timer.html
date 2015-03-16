@@ -4,30 +4,30 @@
 	<form name="stopWatch">
 	<p>Stop Watch</p>
 	<input type="text" size="10" name="stopWatchDisplay" readonly>
-	<input type="button" value="Start/Stop" id="stopWatch S/S" onclick="startPauseStopWatch(StopWatch)">
-	<input type="button" value="Reset" onclick="resetStopWatch(StopWatch)">
+	<input type="button" value="Start/Stop" id="stopWatch S/S" onclick="startPauseWatch(StopWatch)">
+	<input type="button" value="Reset" onclick="resetWatch(StopWatch)">
 	</form>
 	<form name="countDown">
 	<p>Count Down</p>
 	<input type="text" size="10" name="countDownDisplay" readonly>
-	<input type="button" value="Start/Stop" id="countDown S/S" onclick="startPauseStopWatch(CountDown)">
-	<input type="button" value="Reset" onclick="resetStopWatch(CountDown)">
+	<input type="button" value="Start/Stop" id="countDown S/S" onclick="startPauseWatch(CountDown)">
+	<input type="button" value="Reset" onclick="resetWatch(CountDown)">
 	</form>
 </body></html>
 
 
 <script src="timer.js"></script>
 <script>
-inputId = "inputLimit";
+var inputId = "inputLimit";
 
-stopWatchToUpdate = document.stopWatch.stopWatchDisplay;
-stopWatchSSId = "stopWatch S/S";
-StopWatch = new createStopWatch(stopWatchToUpdate, stopWatchSSId);
+var stopWatchToUpdate = document.stopWatch.stopWatchDisplay;
+var stopWatchSSId = "stopWatch S/S";
+var StopWatch = new createStopWatch(stopWatchToUpdate, stopWatchSSId);
 
 
-countDownToUpdate = document.countDown.countDownDisplay;
-countDownSSId = "countDown S/S";
-CountDown = new createCountDown(countDownToUpdate, countDownSSId);
+var countDownToUpdate = document.countDown.countDownDisplay;
+var countDownSSId = "countDown S/S";
+var CountDown = new createCountDown(countDownToUpdate, countDownSSId);
 
 function setWatchLimitsHelpter(inputId){
 	setWatchLimits(inputId, StopWatch);

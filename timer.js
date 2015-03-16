@@ -1,12 +1,17 @@
 
-function createWatch(){
+function createWatch(toUpdate, SSId){
 	this.days = new edgeUnit(0);
 	this.hours = new unitTime(24, this.days, 0);
 	this.minutes = new unitTime(60, this.hours, 0);
 	this.seconds = new unitTime(60, this.minutes, 0);
-	this.base = new edgeUnit(0);
+	this.tracker = new edgeUnit(0);
 
-	this.times = [this.days, this.hours, this.minutes, this.seconds, this.base];
+	this.base = this.seconds;
+	this.times = [this.days, this.hours, this.minutes, this.seconds, this.tracker];
+
+	this.limit = 0;
+	this.toUpdateDisplay = toUpdate;
+	this.SSId = SSId;
 
 	this.getTime = function(){ 
 		return displayUnit(this.days) + ':' +
@@ -19,23 +24,6 @@ function createWatch(){
 		for(i = 0; i < this.times.length; i++){
 			resetUnit(this.times[i]);
 		}
-	}
-}
-function createStopWatch(toUpdate, SSId){
-	this.watch = new createWatch();
-	this.times = this.watch.times
-	this.timer = null;
-	this.limit = 0;
-	this.toUpdateDisplay = toUpdate;
-	this.SSId = SSId;
-	this.countsUp = true;
-
-	this.getTime = function(){ 
-		return this.watch.getTime();
-	}
-
-	this.resetTime = function(){
-		this.watch.resetTime();
 		this.timer = 0;
 	}
 
@@ -48,122 +36,127 @@ function createStopWatch(toUpdate, SSId){
 	}
 
 	this.overLimit = function(){
-		return this.watch.base.timeValue >= this.limit;
+		return this.tracker.timeValue >= this.limit;
+	}
+
+	this.update = function(){
+		this.tracker.increment(1);
+	}
+
+	this.setTimer = function(newTime){
+		this.timer = newTime;
+	}
+
+	this.getTimer = function(){
+		return this.timer
 	}
 
 	this.updateDisplay();
-
 }
 
-function startPauseStopWatch(stopwatch){
-	if(stopwatch.timer > 0){
-		pauseStopWatch(stopwatch);
-		stopwatch.timer = 0;
+function startPauseWatch(watch){
+	if(watch.timer > 0){
+		pauseWatch(watch);
+		watch.setTimer(0);
 	} else{
-		if(stopwatch.countsUp){
-			runStopWatch(stopwatch);
-		}
-		else{
-			runTimer(stopwatch);
-		}
+		runWatch(watch);
 	}
 }
 
-function runStopWatch(stopwatch){
-	if(stopwatch.overLimit()) {
-		setButton(stopwatch.SSId, true);
+function runWatch(watch){
+	if(watch.overLimit()) {
+		setButton(watch.SSId, true);
 		return;
 	}
-	stopwatch.watch.seconds.increment(1);
-	stopwatch.watch.base.increment(1);
-	stopwatch.updateDisplay();
-	stopwatch.timer = setTimeout(function(){runStopWatch(stopwatch);}, 1000);
+	watch.update();
+	watch.updateDisplay();
+	watch.setTimer(setTimeout(function(){runWatch(watch);}, 1000));
 }
 
-function pauseStopWatch(stopwatch){
-	clearTimeout(stopwatch.timer)
+function pauseWatch(watch){
+	clearTimeout(watch.getTimer())
 }
 
-function resetStopWatch(stopwatch){
-	pauseStopWatch(stopwatch);
-	stopwatch.resetTime();
-	stopwatch.updateDisplay();
-
+function resetWatch(watch){
+	pauseWatch(watch);
+	watch.resetTime();
+	watch.updateDisplay();
+	setButton(watch.SSId, false);
 }
 
+function addTime(clock, seconds){
+	for(i = 0; i < seconds; i++){
+		clock.base.increment(1);
+	}
+}
 
+function setWatchLimits(id, watch){
+	newLimit = document.getElementById(id).value;
+	watch.setLimit(newLimit);
+	resetWatch(watch);
+	watch.updateDisplay();
+	setButton(watch.SSId, false);
+}
+
+/////////////////////////////
+/////////////////////////////
+
+function createStopWatch(toUpdate, SSId){
+	var stopWatch = new createWatch(toUpdate, SSId);
+	stopWatch.update = function(){
+		stopWatch.tracker.increment(1);
+		stopWatch.base.increment(1);	
+	}
+	return stopWatch;
+}
 
 /////////////////////////////
 /////////////////////////////
 
 function createCountDown(toUpdate, SSId){
-	this.watch = new createWatch();
-	this.times = this.watch.times
-	this.timer = null;
-	this.limit = 0;
-	this.toUpdateDisplay = toUpdate;
-	this.SSId = SSId;
-	this.countsUp = false;
-
-	this.getTime = function(){ 
-		return this.watch.getTime();
+	var countDown = new createWatch(toUpdate, SSId);
+	countDown.resetTime = function(){
+		for(i = 0; i < countDown.times.length; i++){
+			resetUnit(countDown.times[i]);
+		}
+		countDown.timer = 0;
+		addTime(countDown, countDown.limit)
 	}
 
-	this.resetTime = function(){
-		this.watch.resetTime();
-		this.timer = 0;
+	countDown.update = function(){
+		countDown.tracker.increment(1);
+		countDown.base.decrement(1);
 	}
-
-	this.updateDisplay = function(){
-		this.toUpdateDisplay.value = this.getTime();
-	}
-
-	this.setLimit = function(newLimit){
-		this.limit = newLimit;
-	}
-
-	this.overLimit = function(){
-		return this.watch.base.timeValue >= this.limit;
-	}
-
-	this.updateDisplay();
-}
-
-function runTimer(countDown){
-	if(countDown.overLimit()) {
-		setButton(countDown.SSId, true);
-		return;
-	}
-	countDown.watch.seconds.decrement(1);
-	countDown.watch.base.increment(1);
-	countDown.updateDisplay();
-	countDown.timer = setTimeout(function(){runTimer(countDown);}, 1000);
+	return countDown;
 }
 
 /////////////////////////////
 /////////////////////////////
 
 function unitTime(incrementType, nextUnit, timeValue){
-	this.incrementType = incrementType;
-	this.nextUnit = nextUnit;
-	this.timeValue = timeValue;
-	this.isEdge = false;
+	var unitTime = new edgeUnit(timeValue);
 
-	this.increment = function(amount) {
-		this.timeValue += amount;
-		if(this.timeValue >= this.incrementType){
-			this.timeValue = 0;
-			this.nextUnit.increment(1);
+	unitTime.incrementType = incrementType;
+	unitTime.nextUnit = nextUnit;
+	unitTime.isEdge = false;
+
+	unitTime.increment = function(amount) {
+		unitTime.timeValue += amount;
+		if(unitTime.timeValue >= unitTime.incrementType){
+			unitTime.timeValue = 0;
+			unitTime.nextUnit.increment(1);
 		}
 	}
 
-	this.decrement = function(amount) {
-		this.timeValue -= amount;
-		if(this.timeValue < 0){
-			this.timeValue = this.incrementType - 1;
-			this.nextUnit.decrement(1);
+	unitTime.decrement = function(amount) {
+		unitTime.timeValue -= amount;
+		if(unitTime.timeValue < 0){
+			unitTime.timeValue = this.incrementType - 1;
+			unitTime.nextUnit.decrement(1);
 		}
 	}
+
+	return unitTime
 }
 
 function edgeUnit(timeValue){
@@ -201,23 +194,8 @@ function resetUnit(unitTime){
 	unitTime.timeValue = 0;
 }
 
-function addTime(clock, seconds){
-	for(i = 0; i < seconds; i++){
-		clock.seconds.increment(1);
-	}
-}
-
-
-function setWatchLimits(id, watch){
-	newLimit = document.getElementById(id).value;
-	resetStopWatch(watch);
-	watch.limit = newLimit;
-	if(watch.countsUp === false){
-		addTime(watch.watch, newLimit)
-		watch.updateDisplay();
-	}
-	setButton(watch.SSId, false);
-}
+/////////////////////////////
+/////////////////////////////
 
 function setButton(id, bool){
 	document.getElementById(id).disabled = bool; 
