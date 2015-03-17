@@ -48,7 +48,7 @@ function createWatch(toUpdate, SSId){
 	}
 
 	this.getTimer = function(){
-		return this.timer
+		return this.timer;
 	}
 
 	this.updateDisplay();
@@ -64,12 +64,12 @@ function startPauseWatch(watch){
 }
 
 function runWatch(watch){
+	watch.update();
+	watch.updateDisplay();
 	if(watch.overLimit()) {
 		setButton(watch.SSId, true);
 		return;
 	}
-	watch.update();
-	watch.updateDisplay();
 	watch.setTimer(setTimeout(function(){runWatch(watch);}, 1000));
 }
 
@@ -120,7 +120,7 @@ function createCountDown(toUpdate, SSId){
 			resetUnit(countDown.times[i]);
 		}
 		countDown.timer = 0;
-		addTime(countDown, countDown.limit)
+		addTime(countDown, countDown.limit);
 	}
 
 	countDown.update = function(){
